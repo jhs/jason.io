@@ -16,7 +16,9 @@
 //    limitations under the License.
 
 var fs = require('fs')
+  , ghm = require('github-flavored-markdown')
   , util = require('util')
+  , veil = require('veil').defaults({'keys':'underscore', 'dates':true})
   , optimist = require('optimist')
   , SP = require('static-plus')
 
@@ -34,7 +36,8 @@ function main() {
   builder.template      = __dirname + '/www/interface.t.html'
   builder.partials.post = __dirname + '/www/post.t.html'
 
-  builder.load('css/screen.css', __dirname + '/www/screen.css')
+  builder.load('css/screen.css', __dirname + '/www/screen.css', 'text/css')
+  builder.load('yui/2/reset-fonts-grids.css', __dirname + '/www/yui/2/reset-fonts-grids.css', 'text/css')
 
   builder.on('deploy', function(target) {
     var url = target.replace(/\?.*$/, '/static-plus/')
@@ -45,7 +48,29 @@ function main() {
 }
 
 function post(builder, source) {
-  builder.deploy()
+  fs.readdir(source, function(er, files) {
+    if(er) throw er
+    post_file()
+    function post_file() {
+      var file = files.shift()
+      if(!file)
+        return builder.deploy()
+
+      fs.readFile(source+'/'+file, 'utf8', function(er, body) {
+        if(er) throw er
+
+        var post = veil.parse(body)
+        post.body = ghm.parse(post.body)
+
+        var doc = {'_id':file.replace(/\.md$/, ''), 'post':post}
+        doc.title = post.subject
+        doc.root = '../'
+        builder.doc(doc)
+
+        post_file()
+      })
+    }
+  })
 }
 
 if(ARGV.help) {
