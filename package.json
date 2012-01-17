@@ -6,5 +6,6 @@
 , "engines": [ "node" ]
 , "dependencies" : { "static-plus": "~0.1.0"
                    , "veil"       : "~0.1.0"
+                   , "optimist"   : "~0.3.1"
                    }
 }
