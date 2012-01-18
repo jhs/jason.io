@@ -17,21 +17,12 @@
 
 var fs = require('fs')
   , ghm = require('github-flavored-markdown')
-  , util = require('util')
   , veil = require('veil').defaults({'keys':'underscore', 'dates':true})
   , optimist = require('optimist')
   , SP = require('static-plus')
 
-var OPTS = optimist.describe('db', 'Couch document URL')
-                   .default('db', 'http://localhost:5984/blog/jason.io')
-                   .describe('log', 'Log level')
-                   .default('log', 'info')
-  , ARGV = OPTS.argv
-
 function main() {
   var builder = new SP.Builder
-  builder.log.transports.console.level = ARGV.log
-
   builder.target = ARGV.db
   builder.template      = __dirname + '/www/interface.t.html'
   builder.partials.post = __dirname + '/www/post.t.html'
@@ -40,41 +31,45 @@ function main() {
   builder.load('yui/2/reset-fonts-grids.css', __dirname + '/www/yui/2/reset-fonts-grids.css', 'text/css')
 
   builder.on('deploy', function(target) {
-    var url = target.replace(/\?.*$/, '/static-plus/')
-    console.log('Done: ' + url)
+    console.log('Done: ' + target.replace(/\?.*$/, '/static-plus/'))
   })
 
-  post(builder, __dirname + '/posts')
-}
-
-function post(builder, source) {
-  fs.readdir(source, function(er, files) {
+  fs.readdir(__dirname+'/posts', function(er, files) {
     if(er) throw er
-    post_file()
-    function post_file() {
-      var file = files.shift()
-      if(!file)
-        return builder.deploy()
-
-      fs.readFile(source+'/'+file, 'utf8', function(er, body) {
-        if(er) throw er
-
-        var post = veil.parse(body)
-        post.body = ghm.parse(post.body)
-
-        var doc = {'_id':file.replace(/\.md$/, ''), 'post':post}
-        doc.title = post.subject
-        doc.root = '../'
-        builder.doc(doc)
-
-        post_file()
-      })
-    }
+    post_files(builder, files)
   })
 }
 
+function post_files(builder, files) {
+  var file = files.shift()
+  if(!file)
+    return builder.deploy()
+
+  fs.readFile(__dirname+'/posts/'+file, 'utf8', function(er, body) {
+    if(er) throw er
+
+    var post = veil.parse(body)
+    post.body = ghm.parse(post.body)
+    builder.doc({ '_id'  : file.replace(/\.md$/, '')
+                , 'post' : post
+                , 'title': post.subject
+                , 'root' : '../'
+                })
+
+    post_files(builder, files)
+  })
+}
+
+var OPTS = optimist.describe('db', 'Couch document URL')
+                   .default('db', 'http://localhost:5984/blog/jason.io')
+                   .describe('log', 'Log level')
+                   .default('log', 'info')
+
+var ARGV = OPTS.argv
 if(ARGV.help) {
   OPTS.showHelp()
   process.exit(0)
-} else if(require.main === module)
+}
+
+if(require.main === module)
   main()
