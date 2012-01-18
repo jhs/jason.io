@@ -62,9 +62,6 @@ function post_files(builder, files) {
 
 var OPTS = optimist.describe('db', 'Couch document URL')
                    .default('db', 'http://localhost:5984/blog/jason.io')
-                   .describe('log', 'Log level')
-                   .default('log', 'info')
-
 var ARGV = OPTS.argv
 if(ARGV.help) {
   OPTS.showHelp()
