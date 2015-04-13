@@ -8,5 +8,6 @@
                    , "veil"       : "~0.1.0"
                    , "optimist"   : "~0.3.1"
                    , "github-flavored-markdown": "~1.0.0"
+                   , "hexo-cli": "^0.1.4"
                    }
 }
